@@ -44,6 +44,13 @@ execute "git swift" do
   action :run
 end
 
+execute "git swift3" do
+  cwd "/vagrant"
+  command "git clone -b #{node['swift3_repo_branch']} #{node['swift3_repo']}"
+  creates "/vagrant/swift3"
+  action :run
+end
+
 execute "git swift-specs" do
   cwd "/vagrant"
   command "git clone -b #{node['swift_specs_repo_branch']} #{node['swift_specs_repo']}"
@@ -78,6 +85,15 @@ execute "python-swift-install" do
   action :run
 end
 
+execute "python-swift3-install" do
+  cwd "/vagrant/swift3"
+  command "pip install -e . && pip install -r test-requirements.txt"
+  if not node['full_reprovision']
+    creates "/usr/local/lib/python2.7/dist-packages/swift3.egg-link"
+  end
+  action :run
+end
+
 execute "swift-specs-install" do
   cwd "/vagrant/swift-specs"
   command "pip install -r requirements.txt"
@@ -94,6 +110,7 @@ end
 
 [
   'swift',
+  'swift3',
   'python-swiftclient',
 ].each do |dirname|
   execute "ln #{dirname}" do

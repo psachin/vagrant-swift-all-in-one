@@ -1,6 +1,7 @@
 .vagrant
 localrc*
 /swift
+/swift3
 /python-swiftclient
 /swift-bench
 /swift-specs

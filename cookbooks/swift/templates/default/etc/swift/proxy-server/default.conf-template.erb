@@ -29,6 +29,11 @@ use = egg:swift#tempurl
 use = egg:swift#container_sync
 current = //TEST/SAIO
 
+[filter:swift3]
+use = egg:swift3#swift3
+s3_acl = yes
+dns_compliant_bucket_names = no
+
 [app:proxy-server]
 use = egg:swift#proxy
 allow_account_management = true
