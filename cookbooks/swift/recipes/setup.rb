@@ -18,6 +18,14 @@ execute "clean-up" do
   command "rm /home/vagrant/postinstall.sh || true"
 end
 
+if node['extra_key'] then
+  keys_file = "~vagrant/.ssh/authorized_keys"
+  execute "add_extra_key" do
+    command "echo '#{node['extra_key']}' >> #{keys_file}"
+    not_if "grep -q '#{node['extra_key']}' #{keys_file}"
+  end
+end
+
 # deadsnakes for py2.6
 execute "deadsnakes key" do
   command "sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys DB82666C"
@@ -30,6 +38,12 @@ cookbook_file "/etc/apt/sources.list.d/fkrull-deadsnakes-precise.list" do
   mode 0644
 end
 
+execute "enable backports" do
+  command "sudo sed -ie 's/# deb http:\\/\\/archive.ubuntu.com\\/ubuntu trusty-backports/deb http:\\/\\/archive.ubuntu.com\\/ubuntu trusty-backports/' /etc/apt/sources.list"
+  action :run
+  not_if "sudo grep -q '^deb .* trusty-backports' /etc/apt/sources.list"
+end
+
 execute "apt-get-update" do
   command "apt-get update && touch /tmp/.apt-get-update"
   if not node['full_reprovision']
@@ -40,19 +54,32 @@ end
 
 # packages
 required_packages = [
+  "libjerasure-dev",  # required for the EC biz
   "curl", "gcc", "memcached", "rsync", "sqlite3", "xfsprogs", "git-core",
-  "build-essential", "python-dev", "libffi-dev", "python-setuptools",
-  "python-coverage", "python-dev", "python-nose", "python-simplejson",
-  "python-xattr", "python-eventlet", "python-greenlet", "python-pastedeploy",
-  "python-netifaces", "python-pip", "python-dnspython", "python-mock",
-  "python3.3", "python3.3-dev", "python3.4", "python3.4-dev",
-  "python2.6", "python2.6-dev", "libxml2-dev", "libxml2", "libxslt1-dev",
+  "build-essential", "python-dev", "libffi-dev", "python-dev", "python3.3",
+  "python3.3-dev", "python3.4", "python3.4-dev", "python2.6", "python2.6-dev",
+  "libxml2-dev", "libxml2", "libxslt1-dev",
 ]
 extra_packages = node['extra_packages']
 (required_packages + extra_packages).each do |pkg|
   package pkg do
     action :install
   end
+end
+
+# it's a brave new world
+execute "install pip" do
+  command "curl https://bootstrap.pypa.io/get-pip.py | python"
+  not_if "which pip"
+end
+
+execute "upgrade pip" do
+  command "pip install --upgrade pip"
+end
+
+execute "fix pip warning 1" do
+  command "sed '/env_reset/a Defaults\talways_set_home' -i /etc/sudoers"
+  not_if "grep always_set_home /etc/sudoers"
 end
 
 # setup environment

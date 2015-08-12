@@ -44,6 +44,10 @@ execute "git swift-specs" do
   action :run
 end
 
+execute "fix semantic_version error from testtools" do
+  command "pip install --upgrade testtools"
+end
+
 execute "python-swiftclient-install" do
   cwd "/vagrant/python-swiftclient"
   command "pip install -e . && pip install -r test-requirements.txt"
