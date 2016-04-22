@@ -33,8 +33,8 @@ execute "deadsnakes key" do
   not_if "sudo apt-key list | grep 'Launchpad Old Python Versions'"
 end
 
-cookbook_file "/etc/apt/sources.list.d/fkrull-deadsnakes-precise.list" do
-  source "etc/apt/sources.list.d/fkrull-deadsnakes-precise.list"
+cookbook_file "/etc/apt/sources.list.d/fkrull-deadsnakes-trusty.list" do
+  source "etc/apt/sources.list.d/fkrull-deadsnakes-trusty.list"
   mode 0644
 end
 
@@ -54,10 +54,10 @@ end
 
 # packages
 required_packages = [
-  "libjerasure-dev",  # required for the EC biz
-  "curl", "gcc", "memcached", "rsync", "sqlite3", "xfsprogs", "git-core",
-  "build-essential", "python-dev", "libffi-dev", "python-dev", "python3.3",
-  "python3.3-dev", "python3.4", "python3.4-dev", "python2.6", "python2.6-dev",
+  "liberasurecode-dev",  # required for the EC biz
+  "libssl-dev", # libssl-dev is required for building wheels from the cryptography package in swift.
+  "curl", "gcc", "memcached", "rsync", "sqlite3", "xfsprogs", "git-core", "build-essential",
+  "python-dev", "libffi-dev", "python3.4", "python3.4-dev", "python2.6", "python2.6-dev",
   "libxml2-dev", "libxml2", "libxslt1-dev",
 ]
 extra_packages = node['extra_packages']
@@ -67,19 +67,35 @@ extra_packages = node['extra_packages']
   end
 end
 
+# no-no packages (PIP is the bomb, system packages are OLD SKOOL)
+unrequired_packages = [
+  "python-requests",  "python-six", "python-urllib3",
+  "python-pbr", "python-pip",
+]
+unrequired_packages.each do |pkg|
+  package pkg do
+    action :purge
+  end
+end
+
 # it's a brave new world
 execute "install pip" do
   command "curl https://bootstrap.pypa.io/get-pip.py | python"
   not_if "which pip"
 end
 
+# pip 8.0 is more or less broken on trusty -> https://github.com/pypa/pip/issues/3384
 execute "upgrade pip" do
-  command "pip install --upgrade pip"
+  command "pip install --upgrade 'pip>=8.0.2'"
 end
 
 execute "fix pip warning 1" do
   command "sed '/env_reset/a Defaults\talways_set_home' -i /etc/sudoers"
   not_if "grep always_set_home /etc/sudoers"
+end
+
+execute "fix pip warning 2" do
+  command "pip install --upgrade ndg-httpsclient"
 end
 
 # setup environment
