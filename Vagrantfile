@@ -26,11 +26,9 @@ vagrant_boxes = {
 vagrant_box = (ENV['VAGRANT_BOX'] || DEFAULT_BOX)
 
 base_ip = IPAddr.new(ENV['IP'] || "192.168.8.80")
-node5_ip = IPAddr.new(ENV['IP'] || "192.168.8.81")
 
 hosts = {
   'default' => base_ip.to_s,
-  'node5' => node5_ip.to_s
 }
 extra_vms = Integer(ENV['EXTRA_VMS'] || 0)
 (1..extra_vms).each do |i|
